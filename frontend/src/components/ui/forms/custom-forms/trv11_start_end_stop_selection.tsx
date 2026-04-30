@@ -193,7 +193,7 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
     if (!isParsed) {
         return (
             <div className="p-4">
-                <h3 className="text-lg font-bold mb-4">Paste the 1st on_search Payload</h3>
+                <h3 className="text-lg font-bold mb-4">Paste the master on_search Payload</h3>
                 <textarea
                     className="w-full h-64 p-4 border rounded mb-4 font-mono text-sm bg-gray-900 text-green-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Paste on_search JSON payload here..."
@@ -251,7 +251,7 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                 </div>
 
                 {/* BPP ID Input */}
-                <div className={fieldWrapperStyle}>
+                {/* <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
                         Enter BPP ID <span className="text-red-500">*</span>
                     </label>
@@ -263,7 +263,7 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                         placeholder="Enter BPP ID"
                         className={inputStyle}
                     />
-                </div>
+                </div> */}
 
                 {/* Collector Dropdown */}
                 <div className={fieldWrapperStyle}>

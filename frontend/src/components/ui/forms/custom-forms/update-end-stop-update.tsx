@@ -73,9 +73,7 @@ export default function Metro210EndStopUpdate({ submitEvent }: IMetroEndStopProp
             setFulfillmentId(tripFulfillment.id);
 
             // Filter out START and END stops
-            const filteredStops = tripFulfillment.stops.filter(
-                (stop) => stop.type !== "START"
-            );
+            const filteredStops = tripFulfillment.stops.filter((stop) => stop.type !== "START");
 
             if (filteredStops.length === 0) {
                 throw new Error("No intermediate stops found");
@@ -122,7 +120,7 @@ export default function Metro210EndStopUpdate({ submitEvent }: IMetroEndStopProp
     if (!isParsed) {
         return (
             <div className="p-4">
-                <h3 className="text-lg font-bold mb-4">Paste the 1st on_search Payload</h3>
+                <h3 className="text-lg font-bold mb-4">Paste the master on_search Payload</h3>
                 <textarea
                     className="w-full h-64 p-4 border-2 border-gray-300 rounded mb-4 font-mono text-sm bg-gray-900 text-green-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     placeholder="Paste on_search JSON payload here..."
