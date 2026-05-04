@@ -129,11 +129,12 @@ const FlowInformation: FC<FlowInformationProps> = ({
 
     const hasTabs = hasExampleObject || hasXValidations || !!selectedStep;
 
+    const urlTab = searchParams.get("tab") as Section | null;
+
     useEffect(() => {
         const validSections: Section[] = canShowChatbot
             ? ["preview", "x-validations", "request", "response", "chatbot"]
             : ["preview", "x-validations", "request", "response"];
-        const urlTab = searchParams.get("tab") as Section | null;
 
         if (isFirstActionEffect.current) {
             isFirstActionEffect.current = false;
@@ -185,7 +186,16 @@ const FlowInformation: FC<FlowInformationProps> = ({
         } else {
             setShowPreviewDetails(false);
         }
-    }, [selectedFlowAction, scheduleShowDetails, canShowChatbot, searchParams]);
+    }, [
+        selectedFlowAction,
+        scheduleShowDetails,
+        canShowChatbot,
+        urlTab,
+        hasExampleObject,
+        selectedStep,
+        hasXValidations,
+        setSearchParams,
+    ]);
 
     if (isEmpty) {
         return (
