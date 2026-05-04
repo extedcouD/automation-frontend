@@ -80,6 +80,7 @@ export default function Metro210CommonItemFulfillmentSelection({
     const [jsonPayload, setJsonPayload] = useState("");
     const [providers, setProviders] = useState<IProvider[]>([]);
     const [isParsed, setIsParsed] = useState(false);
+    const [showPasteInput, setShowPasteInput] = useState(false);
     const [rawPayload, setRawPayload] = useState<IOnSearchPayload | null>(null);
 
     const [selectedProviderId, setSelectedProviderId] = useState("");
@@ -105,6 +106,7 @@ export default function Metro210CommonItemFulfillmentSelection({
         setJsonPayload("");
         setProviders([]);
         setIsParsed(false);
+        setShowPasteInput(false);
         setRawPayload(null);
         setSelectedProviderId("");
         setSelectedItemId("");
@@ -116,7 +118,12 @@ export default function Metro210CommonItemFulfillmentSelection({
         setCityCode("std:080");
     }, [flowId]);
 
-    const parsePayload = () => {
+    const handleProcessPayload = () => {
+        if (!jsonPayload || !jsonPayload.trim()) {
+            toast.warn("Please paste a payload first");
+            return;
+        }
+
         try {
             const payload: IOnSearchPayload = JSON.parse(jsonPayload);
             const parsedProviders = payload?.message?.catalog?.providers;
@@ -128,12 +135,14 @@ export default function Metro210CommonItemFulfillmentSelection({
             setProviders(parsedProviders);
             setRawPayload(payload);
             setIsParsed(true);
+            setShowPasteInput(false);
             toast.success(`Found ${parsedProviders.length} provider(s)`);
         } catch (e: unknown) {
             console.error(e);
             toast.error("Failed to parse payload: " + (e as Error).message);
         }
     };
+
 
     const selectedProvider = useMemo(() => {
         return providers.find((p) => p.id === selectedProviderId) || null;
@@ -259,6 +268,7 @@ export default function Metro210CommonItemFulfillmentSelection({
         setJsonPayload("");
         setProviders([]);
         setIsParsed(false);
+        setShowPasteInput(false);
         setRawPayload(null);
         setSelectedProviderId("");
         setSelectedItemId("");
@@ -275,36 +285,85 @@ export default function Metro210CommonItemFulfillmentSelection({
     const labelStyle = "mb-1 font-semibold";
     const fieldWrapperStyle = "flex flex-col mb-2";
 
-    if (!isParsed) {
-        return (
-            <div className="p-4">
-                <h3 className="text-lg font-bold mb-4">Paste the master on_search Payload</h3>
-                <textarea
-                    className="w-full h-64 p-4 border rounded mb-4 font-mono text-sm bg-gray-900 text-green-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Paste master on_search JSON payload here..."
-                    value={jsonPayload}
-                    onChange={(e) => setJsonPayload(e.target.value)}
-                />
-                <button
-                    onClick={parsePayload}
-                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-                >
-                    Parse Payload
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-4 h-[500px] overflow-y-scroll p-4">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Search Configuration</h3>
-                <button onClick={handleReset} className="text-sm text-gray-500 hover:text-gray-700">
-                    Reset
+        <div className="space-y-4 h-[500px] overflow-y-scroll p-4 bg-gray-50/50">
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-bold text-gray-800">Search Configuration</h3>
+                <button
+                    onClick={handleReset}
+                    className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                >
+                    Reset Form
                 </button>
             </div>
 
-            <div className="border p-3 rounded space-y-2">
+            {/* Optional Payload Paste Section */}
+            {showPasteInput ? (
+                <div className="border border-blue-200 bg-blue-50/80 p-4 rounded-xl shadow-inner mb-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                        <label className="text-sm font-bold text-blue-900">Paste on_search Payload</label>
+                        <button 
+                            onClick={() => setShowPasteInput(false)}
+                            className="text-gray-400 hover:text-gray-600"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <textarea
+                        className="w-full h-32 p-3 border border-blue-300 rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-blue-400 outline-none"
+                        placeholder="Paste master on_search JSON here..."
+                        value={jsonPayload}
+                        onChange={(e) => setJsonPayload(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleProcessPayload}
+                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                        >
+                            Load Data
+                        </button>
+                        <button
+                            onClick={() => {
+                                setJsonPayload("");
+                                setShowPasteInput(false);
+                            }}
+                            className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-center justify-between border border-blue-100 bg-blue-50/40 p-3 rounded-xl shadow-sm mb-4">
+                    <span className="text-sm font-semibold text-blue-900">
+                        Paste on_search payload (optional)
+                    </span>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowPasteInput(true)}
+                            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-200"
+                        >
+                            {isParsed ? "Modify Payload" : "Paste Payload"}
+                        </button>
+                        {isParsed && (
+                            <button
+                                onClick={() => {
+                                    setJsonPayload("");
+                                    setIsParsed(false);
+                                    setProviders([]);
+                                    setRawPayload(null);
+                                    toast.info("Payload cleared");
+                                }}
+                                className="text-xs text-gray-500 hover:text-red-500 underline underline-offset-2 transition-colors"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <div className="border border-gray-200 bg-white p-4 rounded-xl shadow-sm space-y-4">
                 {/* City Code */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
@@ -323,47 +382,69 @@ export default function Metro210CommonItemFulfillmentSelection({
                 {/* Provider ID */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
-                        Select Provider ID <span className="text-red-500">*</span>
+                        Provider ID <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        value={selectedProviderId}
-                        onChange={(e) => handleProviderChange(e.target.value)}
-                        required
-                        className={inputStyle}
-                    >
-                        <option value="">-- Select a Provider --</option>
-                        {providers.map((provider) => (
-                            <option key={provider.id} value={provider.id}>
-                                {provider.descriptor?.name
-                                    ? `${provider.descriptor.name} (${provider.id})`
-                                    : provider.id}
-                            </option>
-                        ))}
-                    </select>
+                    {isParsed ? (
+                        <select
+                            value={selectedProviderId}
+                            onChange={(e) => handleProviderChange(e.target.value)}
+                            required
+                            className={inputStyle}
+                        >
+                            <option value="">-- Select a Provider --</option>
+                            {providers.map((provider) => (
+                                <option key={provider.id} value={provider.id}>
+                                    {provider.descriptor?.name
+                                        ? `${provider.descriptor.name} (${provider.id})`
+                                        : provider.id}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            type="text"
+                            value={selectedProviderId}
+                            onChange={(e) => setSelectedProviderId(e.target.value)}
+                            placeholder="Enter Provider ID"
+                            className={inputStyle}
+                            required
+                        />
+                    )}
                 </div>
 
                 {/* Item ID — filtered by descriptor.code per flow */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
-                        Select Item ID <span className="text-red-500">*</span>
+                        Item ID <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        value={selectedItemId}
-                        onChange={(e) => handleItemChange(e.target.value)}
-                        required
-                        disabled={!selectedProviderId}
-                        className={inputStyle}
-                    >
-                        <option value="">-- Select an Item --</option>
-                        {availableItems.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.descriptor?.name
-                                    ? `${item.descriptor.name} (${item.id})`
-                                    : item.id}
-                            </option>
-                        ))}
-                    </select>
-                    {selectedProviderId && availableItems.length === 0 && (
+                    {isParsed ? (
+                        <select
+                            value={selectedItemId}
+                            onChange={(e) => handleItemChange(e.target.value)}
+                            required
+                            disabled={!selectedProviderId}
+                            className={inputStyle}
+                        >
+                            <option value="">-- Select an Item --</option>
+                            {availableItems.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.descriptor?.name
+                                        ? `${item.descriptor.name} (${item.id})`
+                                        : item.id}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            type="text"
+                            value={selectedItemId}
+                            onChange={(e) => setSelectedItemId(e.target.value)}
+                            placeholder="Enter Item ID"
+                            className={inputStyle}
+                            required
+                        />
+                    )}
+                    {isParsed && selectedProviderId && availableItems.length === 0 && (
                         <p className="text-xs text-amber-600 mt-1">
                             No items with code &ldquo;{flowId ? ITEM_CODE_FILTER[flowId] : ""}&rdquo; found for this provider.
                         </p>
@@ -373,23 +454,34 @@ export default function Metro210CommonItemFulfillmentSelection({
                 {/* Fulfillment ID — filtered by type per flow */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
-                        Select Fulfillment ID <span className="text-red-500">*</span>
+                        Fulfillment ID <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        value={selectedFulfillmentId}
-                        onChange={(e) => handleFulfillmentChange(e.target.value)}
-                        required
-                        disabled={!selectedProviderId}
-                        className={inputStyle}
-                    >
-                        <option value="">-- Select a Fulfillment --</option>
-                        {availableFulfillments.map((fulfillment) => (
-                            <option key={fulfillment.id} value={fulfillment.id}>
-                                {fulfillment.id} ({fulfillment.type})
-                            </option>
-                        ))}
-                    </select>
-                    {selectedProviderId && availableFulfillments.length === 0 && (
+                    {isParsed ? (
+                        <select
+                            value={selectedFulfillmentId}
+                            onChange={(e) => handleFulfillmentChange(e.target.value)}
+                            required
+                            disabled={!selectedProviderId}
+                            className={inputStyle}
+                        >
+                            <option value="">-- Select a Fulfillment --</option>
+                            {availableFulfillments.map((fulfillment) => (
+                                <option key={fulfillment.id} value={fulfillment.id}>
+                                    {fulfillment.id} ({fulfillment.type})
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            type="text"
+                            value={selectedFulfillmentId}
+                            onChange={(e) => setSelectedFulfillmentId(e.target.value)}
+                            placeholder="Enter Fulfillment ID"
+                            className={inputStyle}
+                            required
+                        />
+                    )}
+                    {isParsed && selectedProviderId && availableFulfillments.length === 0 && (
                         <p className="text-xs text-amber-600 mt-1">
                             No fulfillments with type &ldquo;{flowId ? FULFILLMENT_TYPE_FILTER[flowId] : ""}&rdquo; found for this provider.
                         </p>
@@ -402,21 +494,32 @@ export default function Metro210CommonItemFulfillmentSelection({
                         <label className={labelStyle}>
                             Item Quantity <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            value={selectedQuantity}
-                            onChange={(e) => setSelectedQuantity(e.target.value)}
-                            required
-                            disabled={!selectedItemId || quantityOptions.length === 0}
-                            className={inputStyle}
-                        >
-                            <option value="">-- Select Quantity --</option>
-                            {quantityOptions.map((qty) => (
-                                <option key={qty} value={String(qty)}>
-                                    {qty}
-                                </option>
-                            ))}
-                        </select>
-                        {selectedItemId && quantityOptions.length === 0 && (
+                        {isParsed ? (
+                            <select
+                                value={selectedQuantity}
+                                onChange={(e) => setSelectedQuantity(e.target.value)}
+                                required
+                                disabled={!selectedItemId || quantityOptions.length === 0}
+                                className={inputStyle}
+                            >
+                                <option value="">-- Select Quantity --</option>
+                                {quantityOptions.map((qty) => (
+                                    <option key={qty} value={String(qty)}>
+                                        {qty}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                type="number"
+                                value={selectedQuantity}
+                                onChange={(e) => setSelectedQuantity(e.target.value)}
+                                placeholder="Enter Quantity"
+                                className={inputStyle}
+                                required
+                            />
+                        )}
+                        {isParsed && selectedItemId && quantityOptions.length === 0 && (
                             <p className="text-xs text-amber-600 mt-1">
                                 No quantity range defined for the selected item.
                             </p>
@@ -431,20 +534,31 @@ export default function Metro210CommonItemFulfillmentSelection({
                             <label className={labelStyle}>
                                 Credential Type <span className="text-red-500">*</span>
                             </label>
-                            <select
-                                value={credType}
-                                onChange={(e) => setCredType(e.target.value)}
-                                disabled={!selectedFulfillmentId || availableCredTypes.length === 0}
-                                className={inputStyle}
-                            >
-                                <option value="">-- Select Credential Type --</option>
-                                {availableCredTypes.map((opt) => (
-                                    <option key={opt} value={opt}>
-                                        {opt}
-                                    </option>
-                                ))}
-                            </select>
-                            {selectedFulfillmentId && availableCredTypes.length === 0 && (
+                            {isParsed ? (
+                                <select
+                                    value={credType}
+                                    onChange={(e) => setCredType(e.target.value)}
+                                    disabled={!selectedFulfillmentId || availableCredTypes.length === 0}
+                                    className={inputStyle}
+                                >
+                                    <option value="">-- Select Credential Type --</option>
+                                    {availableCredTypes.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                            {opt}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    value={credType}
+                                    onChange={(e) => setCredType(e.target.value)}
+                                    placeholder="e.g. AADHAAR, PAN"
+                                    className={inputStyle}
+                                    required
+                                />
+                            )}
+                            {isParsed && selectedFulfillmentId && availableCredTypes.length === 0 && (
                                 <p className="text-xs text-amber-600 mt-1">
                                     No credential types found for the selected fulfillment.
                                 </p>
@@ -459,8 +573,8 @@ export default function Metro210CommonItemFulfillmentSelection({
                                 type="text"
                                 value={credValue}
                                 onChange={(e) => setCredValue(e.target.value)}
-                                disabled={!credType}
-                                placeholder={credType ? `Enter ${credType} number` : "Select a credential type first"}
+                                disabled={isParsed && !credType}
+                                placeholder={isParsed ? (credType ? `Enter ${credType} number` : "Select a credential type first") : "Enter Credential Value"}
                                 className={inputStyle}
                             />
                         </div>
