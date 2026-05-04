@@ -50,6 +50,7 @@ import SelectMutualFundFIS14 from "../custom-forms/mutual_fund_select";
 import SelectMutualFundRedemptionFIS14 from "../custom-forms/mutual_fund_redemption_select";
 import RetINVLInitOffers from "../custom-forms/retinvl-init-offers";
 import Metro200StartEndStopSelection from "../custom-forms/trv11_start_end_stop_selection_200";
+import Metro210CommonItemFulfillmentSelection from "../custom-forms/trv11_210_common_item_fulfillment_select";
 
 export interface FormFieldConfigType {
     name: string;
@@ -103,7 +104,8 @@ export interface FormFieldConfigType {
         | "fis14_mutul_fund_select"
         | "fis14_mf_redemption_select"
         | "insurance_select"
-        | "datetime-local";
+        | "datetime-local"
+        | "trv11_210_common_item_fulfillment_select";
 
     payloadField: string;
     values?: string[];
@@ -403,6 +405,10 @@ export default function FormConfig({
         return (
             <SelectMutualFundRedemptionFIS14 submitEvent={submitEvent} formConfig={formConfig} />
         );
+    }
+
+    if (formConfig.find((field) => field.type === "trv11_210_common_item_fulfillment_select")) {
+        return <Metro210CommonItemFulfillmentSelection key={flowId} submitEvent={submitEvent} flowId={flowId} />;
     }
 
     // NOTE: The JsonSchemaForm check must come after all other specific form type checks above.

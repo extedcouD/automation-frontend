@@ -48,15 +48,21 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
     const [selectedStartStopCode, setSelectedStartStopCode] = useState("");
     const [selectedEndStopCode, setSelectedEndStopCode] = useState("");
     const [isParsed, setIsParsed] = useState(false);
+    const [showPasteInput, setShowPasteInput] = useState(false);
     const [fulfillmentId, setFulfillmentId] = useState("");
 
     // Additional form fields
-    const [cityCode, setCityCode] = useState("");
+    const [cityCode, setCityCode] = useState("std:080");
     const [vehicleCategory, setVehicleCategory] = useState("METRO");
     const [bppId, setBppId] = useState("");
     const [collector, setCollector] = useState("BAP");
 
-    const parsePayload = () => {
+    const handleProcessPayload = () => {
+        if (!jsonPayload || !jsonPayload.trim()) {
+            toast.warn("Please paste a payload first");
+            return;
+        }
+
         try {
             const payload: IOnSearchPayload = JSON.parse(jsonPayload);
             const providers = payload?.message?.catalog?.providers;
@@ -65,7 +71,6 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                 throw new Error("Invalid payload: No providers found");
             }
 
-            // Find TRIP fulfillment from first provider
             const tripFulfillment = providers[0].fulfillments?.find((f) => f.type === "TRIP");
 
             if (!tripFulfillment) {
@@ -76,30 +81,24 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                 throw new Error("No stops found in TRIP fulfillment");
             }
 
-            // Store fulfillment ID
             setFulfillmentId(tripFulfillment.id);
 
-            // Extract bpp_id from context if available
             const bppIdFromPayload = payload?.context?.bpp_id;
             if (bppIdFromPayload) {
                 setBppId(bppIdFromPayload as string);
             }
 
-            // Get all stops from TRIP fulfillment (all stops can be selected)
             const allStops = tripFulfillment.stops;
-
-            if (allStops.length === 0) {
-                throw new Error("No stops found");
-            }
-
             setStops(allStops);
             setIsParsed(true);
+            setShowPasteInput(false);
             toast.success(`Found ${allStops.length} stops`);
         } catch (e: unknown) {
             console.error(e);
             toast.error("Failed to parse payload: " + (e as Error).message);
         }
     };
+
 
     // Find the index of selected start station
     const selectedStartIndex = useMemo(() => {
@@ -179,9 +178,11 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
         setSelectedStartStopCode("");
         setSelectedEndStopCode("");
         setIsParsed(false);
-        setCityCode("");
+        setShowPasteInput(false);
+        setCityCode("std:080");
         setVehicleCategory("METRO");
         setBppId("");
+        setFulfillmentId("");
         setCollector("BAP");
     };
 
@@ -190,36 +191,85 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
     const labelStyle = "mb-1 font-semibold";
     const fieldWrapperStyle = "flex flex-col mb-2";
 
-    if (!isParsed) {
-        return (
-            <div className="p-4">
-                <h3 className="text-lg font-bold mb-4">Paste the 1st on_search Payload</h3>
-                <textarea
-                    className="w-full h-64 p-4 border rounded mb-4 font-mono text-sm bg-gray-900 text-green-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Paste on_search JSON payload here..."
-                    value={jsonPayload}
-                    onChange={(e) => setJsonPayload(e.target.value)}
-                />
-                <button
-                    onClick={parsePayload}
-                    className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-                >
-                    Parse Payload
-                </button>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-4 h-[500px] overflow-y-scroll p-4">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Search Configuration</h3>
-                <button onClick={handleReset} className="text-sm text-gray-500 hover:text-gray-700">
-                    Reset
+        <div className="space-y-4 h-[500px] overflow-y-scroll p-4 bg-gray-50/50">
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-bold text-gray-800">Search Configuration</h3>
+                <button
+                    onClick={handleReset}
+                    className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                >
+                    Reset Form
                 </button>
             </div>
 
-            <div className="border p-3 rounded space-y-2">
+            {/* Optional Payload Paste Section */}
+            {showPasteInput ? (
+                <div className="border border-blue-200 bg-blue-50/80 p-4 rounded-xl shadow-inner mb-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                        <label className="text-sm font-bold text-blue-900">Paste on_search Payload</label>
+                        <button 
+                            onClick={() => setShowPasteInput(false)}
+                            className="text-gray-400 hover:text-gray-600"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <textarea
+                        className="w-full h-32 p-3 border border-blue-300 rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-blue-400 outline-none"
+                        placeholder="Paste master on_search JSON here..."
+                        value={jsonPayload}
+                        onChange={(e) => setJsonPayload(e.target.value)}
+                    />
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleProcessPayload}
+                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                        >
+                            Load Data
+                        </button>
+                        <button
+                            onClick={() => {
+                                setJsonPayload("");
+                                setShowPasteInput(false);
+                            }}
+                            className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-bold hover:bg-gray-300 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex items-center justify-between border border-blue-100 bg-blue-50/40 p-3 rounded-xl shadow-sm mb-4">
+                    <span className="text-sm font-semibold text-blue-900">
+                        Paste on_search payload (optional)
+                    </span>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowPasteInput(true)}
+                            className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 active:scale-95 transition-all shadow-md shadow-blue-200"
+                        >
+                            {isParsed ? "Modify Payload" : "Paste Payload"}
+                        </button>
+                        {isParsed && (
+                            <button
+                                onClick={() => {
+                                    setJsonPayload("");
+                                    setIsParsed(false);
+                                    setStops([]);
+                                    setFulfillmentId("");
+                                    toast.info("Payload cleared");
+                                }}
+                                className="text-xs text-gray-500 hover:text-red-500 underline underline-offset-2 transition-colors"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <div className="border border-gray-200 bg-white p-4 rounded-xl shadow-sm space-y-4">
                 {/* City Code Input */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
@@ -230,7 +280,7 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                         value={cityCode}
                         onChange={(e) => setCityCode(e.target.value)}
                         required
-                        placeholder="e.g., std:011"
+                        placeholder="e.g., std:080"
                         className={inputStyle}
                     />
                 </div>
@@ -253,7 +303,7 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                 {/* BPP ID Input */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
-                        Enter BPP ID <span className="text-red-500">*</span>
+                        BPP ID <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
@@ -264,6 +314,21 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                         className={inputStyle}
                     />
                 </div>
+
+                {/* Fulfillment ID Input */}
+                {/* <div className={fieldWrapperStyle}>
+                    <label className={labelStyle}>
+                        Fulfillment ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        value={fulfillmentId}
+                        onChange={(e) => setFulfillmentId(e.target.value)}
+                        required
+                        placeholder="Enter Fulfillment ID"
+                        className={inputStyle}
+                    />
+                </div> */}
 
                 {/* Collector Dropdown */}
                 <div className={fieldWrapperStyle}>
@@ -281,56 +346,78 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                     </select>
                 </div>
 
-                {/* Start Station Dropdown */}
+                {/* Start Station */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
-                        Select Start Station <span className="text-red-500">*</span>
+                        Start Station <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        value={selectedStartStopCode}
-                        onChange={(e) => setSelectedStartStopCode(e.target.value)}
-                        required
-                        className={inputStyle}
-                    >
-                        <option value="">-- Select a start station --</option>
-                        {availableStartStops.map((stop) => (
-                            <option
-                                key={stop.id}
-                                value={stop.location?.descriptor?.code || stop.id}
-                            >
-                                {stop.location?.descriptor?.name || `Stop ${stop.id}`}
-                                {stop.location?.descriptor?.code
-                                    ? ` (${stop.location.descriptor.code})`
-                                    : ""}
-                            </option>
-                        ))}
-                    </select>
+                    {isParsed ? (
+                        <select
+                            value={selectedStartStopCode}
+                            onChange={(e) => setSelectedStartStopCode(e.target.value)}
+                            required
+                            className={inputStyle}
+                        >
+                            <option value="">-- Select a start station --</option>
+                            {availableStartStops.map((stop) => (
+                                <option
+                                    key={stop.id}
+                                    value={stop.location?.descriptor?.code || stop.id}
+                                >
+                                    {stop.location?.descriptor?.name || `Stop ${stop.id}`}
+                                    {stop.location?.descriptor?.code
+                                        ? ` (${stop.location.descriptor.code})`
+                                        : ""}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            type="text"
+                            value={selectedStartStopCode}
+                            onChange={(e) => setSelectedStartStopCode(e.target.value)}
+                            required
+                            placeholder="Enter Start Station Code"
+                            className={inputStyle}
+                        />
+                    )}
                 </div>
 
-                {/* End Station Dropdown */}
+                {/* End Station */}
                 <div className={fieldWrapperStyle}>
                     <label className={labelStyle}>
-                        Select End Station <span className="text-red-500">*</span>
+                        End Station <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        value={selectedEndStopCode}
-                        onChange={(e) => setSelectedEndStopCode(e.target.value)}
-                        required
-                        className={inputStyle}
-                    >
-                        <option value="">-- Select an end station --</option>
-                        {availableEndStops.map((stop) => (
-                            <option
-                                key={stop.id}
-                                value={stop.location?.descriptor?.code || stop.id}
-                            >
-                                {stop.location?.descriptor?.name || `Stop ${stop.id}`}
-                                {stop.location?.descriptor?.code
-                                    ? ` (${stop.location.descriptor.code})`
-                                    : ""}
-                            </option>
-                        ))}
-                    </select>
+                    {isParsed ? (
+                        <select
+                            value={selectedEndStopCode}
+                            onChange={(e) => setSelectedEndStopCode(e.target.value)}
+                            required
+                            className={inputStyle}
+                        >
+                            <option value="">-- Select an end station --</option>
+                            {availableEndStops.map((stop) => (
+                                <option
+                                    key={stop.id}
+                                    value={stop.location?.descriptor?.code || stop.id}
+                                >
+                                    {stop.location?.descriptor?.name || `Stop ${stop.id}`}
+                                    {stop.location?.descriptor?.code
+                                        ? ` (${stop.location.descriptor.code})`
+                                        : ""}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            type="text"
+                            value={selectedEndStopCode}
+                            onChange={(e) => setSelectedEndStopCode(e.target.value)}
+                            required
+                            placeholder="Enter End Station Code"
+                            className={inputStyle}
+                        />
+                    )}
                 </div>
             </div>
 
