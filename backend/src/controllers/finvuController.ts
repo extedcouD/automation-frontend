@@ -3,7 +3,7 @@ import axios from 'axios';
 import { RedisService } from 'ondc-automation-cache-lib';
 import logger from '@ondc/automation-logger';
 
-const FINVU_SERVICE_URL = process.env.FINVU_SERVICE_URL ;
+const FINVU_SERVICE_URL = process.env.FINVU_SERVICE_URL;
 
 /**
  * Proxy endpoint to verify consent with Finvu AA Service
@@ -33,13 +33,48 @@ export const verifyConsent: RequestHandler = async (req: Request, res: Response)
 
     try {
       const rawSessionData = await RedisService.getKey(sessionKey);
+      const sessionDataKey = await RedisService.getKey(sessionId)
       if (rawSessionData) {
         sessionData = JSON.parse(rawSessionData);
-        logger.info('Session data retrieved for consent verification', {
+        logger.info('Session data retrieved for consent verification from transaction_id', {
           sessionKey,
           hasConsentHandler: !!sessionData?.consentHandler,
-          hasCustomerId: !!sessionData?.customer_id
+          hasCustomerId: !!sessionData?.customer_id,
+          sessionData: sessionData
         });
+      }
+
+      if (sessionDataKey) {
+        sessionData = JSON.parse(sessionDataKey);
+        logger.info('Session data retrieved for session key', {
+          sessionKey,
+          hasConsentHandler: !!sessionData?.consentHandler,
+          hasCustomerId: !!sessionData?.customer_id,
+          sessionData: sessionData,
+        });
+
+        /**FETCH MOKE DATA USING SESSION ID Start*/
+        const subUrl = sessionData?.subscriberUrl;
+        logger.info('ubscriberUrl extracted from ui-session-data', { subUrl });
+
+        if (subUrl) {
+          const resolvedKey = `MOCK_DATA::${transactionId}::${subUrl}`;
+          logger.info('Resolved composite Redis key', { resolvedKey });
+          let mockSessionDataKey = await RedisService.getKey(resolvedKey);
+          if (mockSessionDataKey) {
+            const mockSessionData = JSON.parse(mockSessionDataKey);
+            logger.info('Session data fetched', {
+              resolvedKey,
+              hasConsentHandler: !!sessionData?.consentHandler,
+              hasCustomerId: !!sessionData?.customer_id,
+              sessionData: mockSessionData,
+            });
+          }
+
+        } else {
+          logger.info('subscriberUrl not found — using bare transactionId');
+        }
+        /**FETCH MOKE DATA USING SESSION ID Start END*/
       }
     } catch (error: any) {
       logger.info('Failed to retrieve session data', {
@@ -58,7 +93,8 @@ export const verifyConsent: RequestHandler = async (req: Request, res: Response)
       const finvuResponse = await axios.post(
         `${FINVU_SERVICE_URL}/finvu-aa/consent/verify`,
         {
-          transactionId
+          transactionId,
+          sessionId
         },
         {
           timeout: 15000, // 15 second timeout
@@ -71,7 +107,8 @@ export const verifyConsent: RequestHandler = async (req: Request, res: Response)
 
       logger.info('Finvu AA Service response received', {
         hasUrl: !!finvuResponse.data?.url,
-        status: finvuResponse.status
+        status: finvuResponse.status,
+        url: finvuResponse.data?.url
       });
 
       // Return the Finvu URL to frontend
@@ -286,9 +323,9 @@ export const handleFinvuCallback: RequestHandler = async (req: Request, res: Res
       status: status || 'success'
     }), 3600);
 
-    logger.info('Finvu completion flag set in Redis', { 
+    logger.info('Finvu completion flag set in Redis', {
       transaction_id,
-      key: completionKey 
+      key: completionKey
     });
 
 
@@ -439,11 +476,11 @@ export const checkFinvuCompletion: RequestHandler = async (req: Request, res: Re
 
     if (completionData) {
       const data = JSON.parse(completionData);
-      logger.info('Finvu completion check: COMPLETED', { 
+      logger.info('Finvu completion check: COMPLETED', {
         transaction_id,
-        timestamp: data.timestamp 
+        timestamp: data.timestamp
       });
-      
+
       res.json({
         completed: true,
         timestamp: data.timestamp,

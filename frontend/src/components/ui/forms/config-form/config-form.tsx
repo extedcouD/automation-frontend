@@ -49,6 +49,8 @@ import InitMetroTRV11 from "../custom-forms/init-metro-trv11";
 import SelectMutualFundFIS14 from "../custom-forms/mutual_fund_select";
 import SelectMutualFundRedemptionFIS14 from "../custom-forms/mutual_fund_redemption_select";
 import RetINVLInitOffers from "../custom-forms/retinvl-init-offers";
+import Metro200StartEndStopSelection from "../custom-forms/trv11_start_end_stop_selection_200";
+import Metro210CommonItemFulfillmentSelection from "../custom-forms/trv11_210_common_item_fulfillment_select";
 
 export interface FormFieldConfigType {
     name: string;
@@ -92,6 +94,7 @@ export interface FormFieldConfigType {
         | "trv11_210_select"
         | "trv11_210_update_end_station"
         | "trv11_210_start_end_stop_selection"
+        | "trv11_start_end_stop_selection_200"
         | "fis12_select_pl"
         | "fis12_search_pl"
         | "fis13_addon_select"
@@ -101,7 +104,8 @@ export interface FormFieldConfigType {
         | "fis14_mutul_fund_select"
         | "fis14_mf_redemption_select"
         | "insurance_select"
-        | "datetime-local";
+        | "datetime-local"
+        | "trv11_210_common_item_fulfillment_select";
 
     payloadField: string;
     values?: string[];
@@ -373,6 +377,10 @@ export default function FormConfig({
         return <Metro210StartEndStopSelection submitEvent={submitEvent} />;
     }
 
+    if (formConfig.find((field) => field.type === "trv11_start_end_stop_selection_200")) {
+        return <Metro200StartEndStopSelection submitEvent={submitEvent} />;
+    }
+
     if (formConfig.find((field) => field.type === "fis12_select_pl")) {
         return <FIS12Select submitEvent={submitEvent} />;
     }
@@ -397,6 +405,10 @@ export default function FormConfig({
         return (
             <SelectMutualFundRedemptionFIS14 submitEvent={submitEvent} formConfig={formConfig} />
         );
+    }
+
+    if (formConfig.find((field) => field.type === "trv11_210_common_item_fulfillment_select")) {
+        return <Metro210CommonItemFulfillmentSelection key={flowId} submitEvent={submitEvent} flowId={flowId} />;
     }
 
     // NOTE: The JsonSchemaForm check must come after all other specific form type checks above.

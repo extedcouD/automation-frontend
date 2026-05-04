@@ -6,6 +6,13 @@ import PayloadEditor from "../../mini-components/payload-editor";
 import { SubmitEventParams } from "../../../../types/flow-types";
 import { toast } from "react-toastify";
 
+function uuidv4(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
 interface Descriptor {
     name?: string;
     code?: string;
@@ -129,7 +136,7 @@ export default function FIS12Search({
                             },
                             form_response: {
                                 status: "SUCCESS",
-                                submission_id: crypto.randomUUID(),
+                                submission_id: uuidv4(),
                             },
                         },
                     },

@@ -42,7 +42,7 @@ interface IMetroEndStopProps {
     }) => Promise<void>;
 }
 
-export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEndStopProps) {
+export default function Metro200StartEndStopSelection({ submitEvent }: IMetroEndStopProps) {
     const [jsonPayload, setJsonPayload] = useState("");
     const [stops, setStops] = useState<IStop[]>([]);
     const [selectedStartStopCode, setSelectedStartStopCode] = useState("");
@@ -71,24 +71,24 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
                 throw new Error("Invalid payload: No providers found");
             }
 
-            const tripFulfillment = providers[0].fulfillments?.find((f) => f.type === "TRIP");
+            const routeFulfillment = providers[0].fulfillments?.find((f) => f.type === "ROUTE");
 
-            if (!tripFulfillment) {
-                throw new Error("No fulfillment of type TRIP found");
+            if (!routeFulfillment) {
+                throw new Error("No fulfillment of type ROUTE found");
             }
 
-            if (!tripFulfillment.stops || tripFulfillment.stops.length === 0) {
-                throw new Error("No stops found in TRIP fulfillment");
+            if (!routeFulfillment.stops || routeFulfillment.stops.length === 0) {
+                throw new Error("No stops found in ROUTE fulfillment");
             }
 
-            setFulfillmentId(tripFulfillment.id);
+            setFulfillmentId(routeFulfillment.id);
 
             const bppIdFromPayload = payload?.context?.bpp_id;
             if (bppIdFromPayload) {
                 setBppId(bppIdFromPayload as string);
             }
 
-            const allStops = tripFulfillment.stops;
+            const allStops = routeFulfillment.stops;
             setStops(allStops);
             setIsParsed(true);
             setShowPasteInput(false);
@@ -98,7 +98,6 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
             toast.error("Failed to parse payload: " + (e as Error).message);
         }
     };
-
 
     // Find the index of selected start station
     const selectedStartIndex = useMemo(() => {
@@ -207,8 +206,10 @@ export default function Metro210StartEndStopSelection({ submitEvent }: IMetroEnd
             {showPasteInput ? (
                 <div className="border border-blue-200 bg-blue-50/80 p-4 rounded-xl shadow-inner mb-4 space-y-3">
                     <div className="flex justify-between items-center">
-                        <label className="text-sm font-bold text-blue-900">Paste on_search Payload</label>
-                        <button 
+                        <label className="text-sm font-bold text-blue-900">
+                            Paste on_search Payload
+                        </label>
+                        <button
                             onClick={() => setShowPasteInput(false)}
                             className="text-gray-400 hover:text-gray-600"
                         >
