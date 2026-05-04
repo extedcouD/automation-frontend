@@ -24,6 +24,8 @@ export const ROUTES = {
     DEVELOPER_GUIDE_USE_CASE: "/developer-guide/:domain/:version/:useCase",
     /** General developer doc page, slug matches filename in GitHub docs/developer-docs */
     DEVELOPER_GUIDE_DOC: "/developer-guide/docs/:slug",
+    /** Standalone x-validations table for a domain/version (usecase-independent). */
+    DEVELOPER_GUIDE_VALIDATIONS: "/validations/developer-guide/:domain/:version",
 } as const;
 
 /** Build path for a specific developer guide use case (domain/version passed as-is; useCase as slug). */
@@ -38,6 +40,11 @@ export function getDeveloperGuideUseCasePath(
 
 export function getDeveloperGuideDocPath(slug: string): string {
     return `/developer-guide/docs/${slug}`;
+}
+
+export function getDeveloperGuideValidationsPath(domain: string, version: string): string {
+    const enc = encodeURIComponent;
+    return `/validations/developer-guide/${enc(domain)}/${enc(version)}`;
 }
 
 /**

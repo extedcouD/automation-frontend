@@ -19,6 +19,7 @@ import DeveloperGuideLanding from "@/pages/developer-guide/landing/DeveloperGuid
 import DeveloperGuideFlowPage from "@/pages/developer-guide/DeveloperGuideFlowPage";
 import DeveloperGuideGettingStarted from "@/pages/developer-guide/landing/DeveloperGuideGettingStarted";
 import DeveloperGuideDocPage from "@/pages/developer-guide/DeveloperGuideDocPage";
+import ValidationsPage from "@/pages/developer-guide/ValidationsPage";
 
 /** Developer Guide is only available in development; redirect to home in production */
 const DeveloperGuideWrapper = ({ children }: { children: React.ReactNode }) =>
@@ -76,6 +77,14 @@ const Routes = () => (
             element={
                 <DeveloperGuideWrapper>
                     <DeveloperGuideDocPage />
+                </DeveloperGuideWrapper>
+            }
+        />
+        <Route
+            path={ROUTES.DEVELOPER_GUIDE_VALIDATIONS}
+            element={
+                <DeveloperGuideWrapper>
+                    <ValidationsPage />
                 </DeveloperGuideWrapper>
             }
         />

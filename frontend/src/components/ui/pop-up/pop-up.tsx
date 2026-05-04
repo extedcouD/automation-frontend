@@ -17,11 +17,26 @@ export default function Popup({
     const [isVisible, setIsVisible] = useState(false);
     const [isShown, setIsShown] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [portalTarget, setPortalTarget] = useState<Element>(
+        () => document.fullscreenElement ?? document.body
+    );
     const { activeCallClickedToggle } = useSession();
 
     useEffect(() => {
         setIsMinimized(false);
     }, [activeCallClickedToggle]);
+
+    // Keep the portal target in sync with the fullscreen element so popups
+    // are visible whether or not a Monaco editor / panel is fullscreened
+    // when the popup opens (or while it's already open).
+    useEffect(() => {
+        const update = () => {
+            setPortalTarget(document.fullscreenElement ?? document.body);
+        };
+        update();
+        document.addEventListener("fullscreenchange", update);
+        return () => document.removeEventListener("fullscreenchange", update);
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -63,7 +78,7 @@ export default function Popup({
                     )}
                 </div>
             </div>,
-            document.fullscreenElement ?? document.body
+            portalTarget
         );
     }
 
